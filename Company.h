@@ -37,8 +37,17 @@ private:
 	int S_Cargos_count;      //count for the number of special cargos
 	int NoOfTotalCargos;     //Total number of cargos
 	
-	int AutoP;
-	int MaxW;
+	int AutoP;  //Auto promotion limit (Day) 
+	int MaxW;   //Maximum wait (Hours)
+	
+	UI* pUI; // pointer to UI class
+	
+	int NoWaitingCargos;     //Total number of cargos
+	int NoLoadingTrucks;
+	int NoEmptyTrucks;
+	int NoMovingCargos;
+	int NoInCheckupTrucks;
+	int NoDeliveredCargos;
 public:
 	Company();
 	void addtoline(Cargos* c, int prio = 0);
@@ -50,4 +59,14 @@ public:
 	void readFile();
 	void setFileInput(string file);
 	void AutoPromotion();
+	void Run();
+	int GetNoWaitingCargos();
+	int GetNoLoadingTrucks();
+	int GetNoEmptyTrucks();
+	int GetNoMovingCargos();
+	int GetNoInCheckupTrucks();
+	int Getcurr_Day();
+	int Getcurr_Hour();
+	int GetNoDeliveredCargos();
+	int GetAutoP(); // test only
 };
