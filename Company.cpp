@@ -11,6 +11,15 @@ Company::Company()
 	V_truckslist = new LinkedQueue<Truck*>;  //VIP trucks list
 	
 	ListofEvents = new LinkedQueue<Events*>; // List of events
+	
+	//int curr_Day = 0;         //Time of current day and hour to take actions in
+	//int curr_Hour = 0;
+	//int NoWaitingCargos = 0;     //Total number of cargos
+	//int NoLoadingTrucks = 0;
+	//int NoEmptyTrucks = 0;
+	//int NoMovingCargos = 0;
+	//int NoInCheckupTrucks = 0;
+	//int NoDeliveredCargos = 0;
 }
 /*void Company::AutoPromotion()
 {
@@ -21,13 +30,75 @@ Company::Company()
 
 	}
 }*/
+int Company::GetAutoP()
+{
+	return AutoP;
+}
+int Company::Getcurr_Day()
+{
+	return curr_Day;
+}
+int Company::GetNoDeliveredCargos()
+{
+	return NoDeliveredCargos;
+}
+int  Company::Getcurr_Hour()
+{
+	return curr_Hour;
+}
+int Company::GetNoWaitingCargos()
+{
+	return NoWaitingCargos;
+}
+int Company::GetNoLoadingTrucks()
+{
+	return NoLoadingTrucks;
+}
+int Company::GetNoEmptyTrucks()
+{
+	return NoEmptyTrucks;
+}
+int Company::GetNoMovingCargos()
+{
+	return NoMovingCargos;
+}
+int Company::GetNoInCheckupTrucks()
+{
+	return NoInCheckupTrucks;
+}
+void Company::Run()
+{
+	UI ui;
+	pUI = &ui;
+	fileInput = pUI->setMode(this);
+	readFile();
+	curr_Day = 0;
+	curr_Hour = 5;
+	while (1)
+	{
+		ExecuteEvents();
+		pUI->Interactive_StepByStep(this);
+
+		curr_Hour++;
+		if (curr_Hour == 24)
+		{
+			curr_Day++;
+			curr_Hour = 0;
+		}
+		if (NoWaitingCargos == 0 && NoLoadingTrucks == 0 && NoMovingCargos == 0 
+			&& NoInCheckupTrucks == 0 && ListofEvents->getcount() == 0)
+		{
+			return;
+		}
+	}
+}
 void Company::setFileInput(string file)
 {
 	fileInput = file;
 }
 void Company::readFile()
 {
-	int N, S, V, NS, SS, VS, NTC, STC, VTC, J, CN, CS, CV, MaxW, E, ETDay, ETHours, 
+	int N, S, V, NS, SS, VS, NTC, STC, VTC, J, CN, CS, CV, E, ETDay, ETHours, 
 		ID, DIST, LT, Cost,
 		EDDay, EDHours, ExtraMoney;
 	char TYP, evnt;
