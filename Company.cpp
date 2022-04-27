@@ -6,30 +6,33 @@ Company::Company()
 	S_cargos = new LinkedQueue<Cargos*>;
 	V_cargos = new PriorityQueue<Cargos*>;
 
-	N_truckslist = new LinkedQueue<Truck*>;  //normal trucks list
-	S_truckslist = new LinkedQueue<Truck*>;  //special trucks list
-	V_truckslist = new LinkedQueue<Truck*>;  //VIP trucks list
+	N_truckslist_empty = new LinkedQueue<Truck*>;  //normal trucks list
+	S_truckslist_empty = new LinkedQueue<Truck*>;  //special trucks list
+	V_truckslist_empty = new LinkedQueue<Truck*>;  //VIP trucks list
 	
+	N_truckslist_loading = new LinkedQueue<Truck*>;  //normal trucks list
+	S_truckslist_loading = new LinkedQueue<Truck*>;  //special trucks list
+	V_truckslist_loading = new LinkedQueue<Truck*>;  //VIP trucks list
+
 	ListofEvents = new LinkedQueue<Events*>; // List of events
 	
-	//int curr_Day = 0;         //Time of current day and hour to take actions in
-	//int curr_Hour = 0;
-	//int NoWaitingCargos = 0;     //Total number of cargos
-	//int NoLoadingTrucks = 0;
-	//int NoEmptyTrucks = 0;
-	//int NoMovingCargos = 0;
-	//int NoInCheckupTrucks = 0;
-	//int NoDeliveredCargos = 0;
+	curr_Day = 0;         //Time of current day and hour to take actions in
+	curr_Hour = 1;
+	NoWaitingCargos = 0;     //Total number of cargos
+	NoLoadingTrucks = 0;
+	NoEmptyTrucks = 0;
+	NoMovingCargos = 0;
+	NoInCheckupTrucks = 0;
+	NoDeliveredCargos = 0;
 }
-/*void Company::AutoPromotion()
+void Company::AutoPromotion()
 {
-	Cargos* prom;
-	N_cargos->peek(prom);
-	if (curr_Hour == (AutoP + prom->)
+	Cargos *ptr = (N_cargos->GetEntry(1));
+	if (ptr->getprepartionday() % AutoP == 0 && ptr->getprepartionhour() == curr_Hour)
 	{
-
+		promotion(ptr->getid());
 	}
-}*/
+}
 int Company::GetAutoP()
 {
 	return AutoP;
@@ -41,6 +44,31 @@ int Company::Getcurr_Day()
 int Company::GetNoDeliveredCargos()
 {
 	return NoDeliveredCargos;
+}
+void Company::print_waiting_cargos()
+{
+	cout << "[";
+	N_cargos->PrintList();
+	cout << "]";
+	cout << "(";
+	S_cargos->PrintList();
+	cout << ")";
+	cout << "{";
+	V_cargos->PrintList();
+	cout << "}" << endl;
+}
+void Company::print_empty_truck()
+{
+	cout << "[";
+	N_truckslist_empty->PrintList();
+	cout << "]";
+	cout << "(";
+	S_truckslist_empty->PrintList();
+	cout << ")";
+	cout << "{";
+	V_truckslist_empty->PrintList();
+	cout << "}" << endl;
+
 }
 int  Company::Getcurr_Hour()
 {
@@ -72,13 +100,11 @@ void Company::Run()
 	pUI = &ui;
 	fileInput = pUI->setMode(this);
 	readFile();
-	curr_Day = 0;
-	curr_Hour = 5;
-	while (1)
+	while (true)
 	{
 		ExecuteEvents();
+		NoEmptyTrucks = N_truckslist_empty->getcount() + S_truckslist_empty->getcount() + V_truckslist_empty->getcount();  //this is in phase 1 only
 		pUI->Interactive_StepByStep(this);
-
 		curr_Hour++;
 		if (curr_Hour == 24)
 		{
@@ -96,6 +122,7 @@ void Company::setFileInput(string file)
 {
 	fileInput = file;
 }
+
 void Company::readFile()
 {
 	int N, S, V, NS, SS, VS, NTC, STC, VTC, J, CN, CS, CV, E, ETDay, ETHours, 
@@ -118,18 +145,18 @@ void Company::readFile()
 		file >> CV;  //check up duration for VIP trucks
 		for (int i = 0; i < N; i++)
 		{
-			Truck* a= new Truck ('N',NS,NTC,J,CN); 
-			N_truckslist->enqueue(a);
+			Truck* a= new Truck ('N',NS,NTC,J,CN,i+1); 
+			N_truckslist_empty->enqueue(a);
 		}
 		for (int i = 0; i < S; i++)
 		{
-			Truck* b = new Truck('S', SS, STC, J, CS);
-			S_truckslist->enqueue(b);
+			Truck* b = new Truck('S', SS, STC, J, CS, N + i + 1);
+			S_truckslist_empty->enqueue(b);
 		}
 		for (int i = 0; i < V; i++)
 		{
-			Truck* c =new Truck('V', VS, VTC, J, CV);
-			V_truckslist->enqueue(c);
+			Truck* c =new Truck('V', VS, VTC, J, CV, N + S + i + 1);
+			V_truckslist_empty->enqueue(c);
 		}
 		file >> AutoP;
 
@@ -178,10 +205,10 @@ void Company::addtoline(Cargos* c, int prio)
 {
 	char x;
 	x = c->gettype();
-	NoOfTotalCargos++;
+	NoWaitingCargos++;
 	if (x == 'N')
 	{
-		N_cargos->InsertBeg(c);
+		N_cargos->InsertEnd(c);
 		N_cargos_count++;
 	}
 	else if (x == 'S')
@@ -205,6 +232,7 @@ void Company::cancellationcargo(int id)
 {
 	N_cargos->DeleteNode(id);
 	N_cargos_count--;
+	NoWaitingCargos--;
 }
 
 void Company::promotion(int id)
@@ -213,8 +241,7 @@ void Company::promotion(int id)
 	pc->settype('V');
 	int prio=calcprio(pc);
 	cancellationcargo(id);
-	V_cargos->enqueue(pc, prio);
-	V_cargos_count++;
+	addtoline(pc,prio);
 }
 
 void Company::ExecuteEvents()
@@ -235,5 +262,17 @@ void Company::ExecuteEvents()
 
 Company::~Company()
 {
+	delete N_cargos;
+	delete S_cargos;
+	delete V_cargos;
 
+	delete N_truckslist_empty;  //normal trucks list
+	delete S_truckslist_empty;  //special trucks list
+	delete V_truckslist_empty;  //VIP trucks list
+
+	delete N_truckslist_loading;  //normal trucks list
+	delete S_truckslist_loading;  //special trucks list
+	delete V_truckslist_loading;  //VIP trucks list
+
+	delete ListofEvents;
 }
