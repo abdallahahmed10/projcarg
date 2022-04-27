@@ -13,6 +13,7 @@
 #include <string>
 #include "WaitingList.h"
 
+
 class UI;
 class Events;
 class Company
@@ -26,16 +27,30 @@ private:
 	LinkedQueue<Cargos*>* S_cargos;
 	PriorityQueue<Cargos*>* V_cargos;
 
-	LinkedQueue<Truck*>* N_truckslist;
-	LinkedQueue<Truck*>* S_truckslist;
-	LinkedQueue<Truck*>* V_truckslist;
+	LinkedQueue<Cargos*>* N_cargos_deliverd;
+	LinkedQueue<Cargos*>* S_cargos_deliverd;
+	LinkedQueue<Cargos*>* V_cargos_deliverd;
+
+	LinkedQueue<Truck*>* N_truckslist_empty;
+	LinkedQueue<Truck*>* S_truckslist_empty;
+	LinkedQueue<Truck*>* V_truckslist_empty;
+
+	LinkedQueue<Truck*>* N_truckslist_loading;
+	LinkedQueue<Truck*>* S_truckslist_loading;
+	LinkedQueue<Truck*>* V_truckslist_loading;
+
+	LinkedQueue<Truck*>* N_truckslist_inCheckup;
+	LinkedQueue<Truck*>* S_truckslist_inCheckup;
+	LinkedQueue<Truck*>* V_truckslist_inCheckup;
+
+
 
 	LinkedQueue<Events*>* ListofEvents;
 
-	int N_cargos_count;      //count for the number of normal cargos
-	int V_cargos_count;      //count for the number of VIP cargos
-	int S_Cargos_count;      //count for the number of special cargos
-	int NoOfTotalCargos;     //Total number of cargos
+	int N_cargos_count;      //count for the number of waiting normal cargos
+	int V_cargos_count;      //count for the number of waiting VIP cargos
+	int S_Cargos_count;      //count for the number of waiting special cargos
+	//int NoOfTotalCargos;     //Total number of cargos
 	
 	int AutoP;  //Auto promotion limit (Day) 
 	int MaxW;   //Maximum wait (Hours)
@@ -68,5 +83,7 @@ public:
 	int Getcurr_Day();
 	int Getcurr_Hour();
 	int GetNoDeliveredCargos();
-	int GetAutoP(); // test only
+	int GetAutoP();// test only
+	void print_waiting_cargos();
+	void print_empty_truck();
 };
