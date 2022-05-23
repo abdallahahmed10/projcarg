@@ -82,6 +82,9 @@ private:
 
 	
 	int NoMovingTrucks;
+	int maxconditionN;
+	int maxconditionS;
+
 
 public:
 	Company();
@@ -108,6 +111,9 @@ public:
 	void print_loading_truck();   //p2
 	void print_empty_truck();
 	void FiveSteps();
+	
+
+
 
 	void AvailToLoading();
 	void LoadCargos();     //p2
@@ -122,4 +128,5 @@ public:
 	void print_moving_truck();
 	void moveatruck();
 	bool OffHours();
+	bool MaxWaitRule();
 };
