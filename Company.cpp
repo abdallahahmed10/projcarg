@@ -36,6 +36,8 @@ Company::Company()
 	NoWaitingCargos = 0;     //Total number of cargos
 	NoMovingTrucks = 0;
 	NoDeliveredCargos = 0;
+	NoMovingCargos = 0;
+
 
 	NoEmptyTrucks = 0;
 	NoLoadingTrucks = 0;
@@ -52,6 +54,8 @@ Company::Company()
 	NoDeliveredNormalCargos = 0;
 	NoDeliveredSpecialCargos = 0;
 	NoDeliveredVIPCargos = 0;
+	maxconditionN = 0;
+	maxconditionS = 0;
 }
 void Company::AutoPromotion()
 {
@@ -248,7 +252,7 @@ int Company::GetNoEmptyTrucks()
 }
 int Company::GetNoMovingCargos()
 {
-	return NoMovingTrucks;
+	return NoMovingCargos;
 }
 int Company::GetNoInCheckupTrucks()
 {
@@ -263,11 +267,13 @@ void Company::Run()
 	while (true)
 	{
 		ExecuteEvents();
-		NoEmptyTrucks = N_truckslist_empty->getcount() + S_truckslist_empty->getcount() + V_truckslist_empty->getcount();  //this is in phase 1 only
+		NoEmptyTrucks = N_truckslist_empty->getcount() + S_truckslist_empty->getcount() + V_truckslist_empty->getcount(); //this is in phase 1 only
+		MaxWaitRule();
 		if (N_cargos->GetEntry(1) && ((curr_Day - N_cargos->GetEntry(1)->getprepartionday()) == AutoP) && (curr_Hour - N_cargos->GetEntry(1)->getprepartionhour() == 0))
 		{
 			AutoPromotion();
 		}
+
 		AvailToLoading();
 		LoadCargos();
 		moveatruck();
@@ -398,6 +404,8 @@ void Company::moveatruck()
 			truck->Calc_CDT_ForCargos();
 			NoLoadingTrucks--;
 			N_truck_Loading = nullptr;
+			NoMovingCargos = NoMovingCargos + truck->getcapacity();
+
 		}
 	}
 	if (V_truck_Loading != nullptr)
@@ -422,6 +430,9 @@ void Company::moveatruck()
 			truck->Calc_CDT_ForCargos();
 			NoLoadingTrucks--;
 			V_truck_Loading = nullptr;
+			NoMovingCargos = NoMovingCargos + truck->getcapacity();
+
+
 		}
 	}
 	if (S_truck_Loading != nullptr)
@@ -445,6 +456,8 @@ void Company::moveatruck()
 			truck->Calc_CDT_ForCargos();
 			NoLoadingTrucks--;
 			S_truck_Loading = nullptr;
+			NoMovingTrucks++;
+			NoMovingCargos = NoMovingCargos + truck->getcapacity();
 		}
 	}
 }
@@ -884,7 +897,7 @@ void Company::AvailToLoading()
 			V_truckslist_empty->dequeue(truck);
 			//N_truckslist_loading->enqueue(truck);
 			N_truck_Loading = truck;
-			for (int i = 0; i < truck->getcapacity(); i++)
+			for (int i = 0; i <= truck->getcapacity(); i++)
 			{
 				N_cargos->GetFirstItem(cargo);
 				temp_N_waiting->InsertEnd(cargo);
@@ -892,6 +905,61 @@ void Company::AvailToLoading()
 			}
 			NoEmptyTrucks--;
 			NoLoadingTrucks++;
+		}
+	}
+	if (MaxWaitRule()) //MZ
+	{
+		if (maxconditionN)
+		{
+			if (N_truck_Loading == nullptr && N_truckslist_empty->peek(truck))
+			{
+				if (N_cargos->getcount() < truck->getcapacity())
+				{
+					N_truckslist_empty->dequeue(truck);
+					//N_truckslist_loading->enqueue(truck);
+					N_truck_Loading = truck;
+					for (int i = 0; i <= N_cargos->getcount(); i++)
+					{
+						N_cargos->GetFirstItem(cargo);
+						temp_N_waiting->InsertEnd(cargo);
+						N_cargos->DeleteFirst();
+					}
+					NoEmptyTrucks--;
+					NoLoadingTrucks++;
+				}
+			}
+		}
+		else if (N_truckslist_empty->isEmpty() && V_truckslist_empty->peek(truck))
+		{
+			if (N_cargos->getcount() < truck->getcapacity())
+			{
+				V_truckslist_empty->dequeue(truck);
+				//N_truckslist_loading->enqueue(truck);
+				N_truck_Loading = truck;
+				for (int i = 0; i < N_cargos->getcount(); i++)
+				{
+					N_cargos->GetFirstItem(cargo);
+					temp_N_waiting->InsertEnd(cargo);
+					N_cargos->DeleteFirst();
+				}
+				NoEmptyTrucks--;
+				NoLoadingTrucks++;
+			}
+		}
+		if (maxconditionS) {
+			if (S_truck_Loading == nullptr && S_truckslist_empty->peek(truck) && S_cargos->getcount() < truck->getcapacity())
+			{
+				S_truckslist_empty->dequeue(truck);
+				//S_truckslist_loading->enqueue(truck);
+				S_truck_Loading = truck;
+				for (int i = 0; i < S_cargos->getcount(); i++)
+				{
+					S_cargos->dequeue(cargo);
+					temp_S_waiting->enqueue(cargo);
+				}
+				NoEmptyTrucks--;
+				NoLoadingTrucks++;
+			}
 		}
 	}
 }
@@ -1030,6 +1098,7 @@ void Company::LoadCargos()
 
 }
 
+
 void Company::DeliverCargos()
 {
 	Cargos* cargo;
@@ -1046,6 +1115,8 @@ void Company::DeliverCargos()
 				{
 					truck->RemoveCargoFromList(cargo);
 					cargos_delivered->enqueue(cargo);
+					NoMovingCargos--;
+					NoDeliveredCargos++;
 				}
 			}
 			temp->enqueue(truck);
@@ -1112,6 +1183,8 @@ void Company::MovingToAvailable()       //Moves the truck from moving list to em
 				V_truckslist_empty->enqueue(TruckToReturn);
 			}
 			NoEmptyTrucks++;
+
+
 
 		}
 		if (TruckToReturn->NeedsCheckup())
@@ -1213,4 +1286,35 @@ bool Company::OffHours()
 	{
 		return false;
 	}
+}
+
+
+bool Company::MaxWaitRule()
+{
+	Cargos* cargo;
+	
+	if (!(N_cargos->IsEmpty()))
+	{
+		N_cargos->GetFirstItem(cargo);
+		if ((cargo->getprepartionhour()) + MaxW + 24*(cargo->getprepartionday()) == curr_Hour + 24*curr_Day)
+		{
+			maxconditionN = 1;
+			return true;
+		}
+	}
+
+	if (!(S_cargos->isEmpty()))
+	{
+		while (S_cargos->peek(cargo))
+		{
+			if ((cargo->getprepartionhour()) + MaxW + 24 * (cargo->getprepartionday()) == curr_Hour + 24 * curr_Day)
+			{
+				maxconditionS = 1;
+					return true;
+			}
+		}
+
+	}
+
+	return false;
 }
