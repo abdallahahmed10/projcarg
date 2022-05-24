@@ -383,9 +383,11 @@ void Company::FiveSteps()
 void Company::moveatruck()
 {
 	Truck* truck;
+	Cargos* cargo;
 	if (N_truck_Loading != nullptr)//N_truckslist_loading->peek(truck))
 	{
 		truck = N_truck_Loading;
+		truck->PeekCargoList(cargo);
 		int movetimeDays = truck->getLoadingTimeDay();
 		int movetimeHour = (/*truck->calcTotalLoadingTimeCargos()*/truck->getTotalLoadingTimeCargos()) + (truck->getLoadingTimeHour());
 		while (movetimeHour > 24)
@@ -400,7 +402,7 @@ void Company::moveatruck()
 		if (curr_Hour == movetimeHour && curr_Day == movetimeDays)
 		{
 			//N_truckslist_loading->dequeue(x);
-			Moving_TruckList->enqueue(truck, 0);
+			Moving_TruckList->enqueue(truck, -(cargo->getdelivaryhour()+ 24*(cargo->getdelivaryhour())));
 			truck->Calc_CDT_ForCargos();
 			NoLoadingTrucks--;
 			N_truck_Loading = nullptr;
@@ -411,6 +413,7 @@ void Company::moveatruck()
 	if (V_truck_Loading != nullptr)
 	{
 		truck = V_truck_Loading;
+		truck->PeekCargoList(cargo);
 		//int movetime = (truck->getTotalLoadingTimeCargos()) + (truck->getTotalLoadingTime());
 		int movetimeDays = truck->getLoadingTimeDay();
 		int movetimeHour = (/*truck->calcTotalLoadingTimeCargos()*/truck->getTotalLoadingTimeCargos()) + (truck->getLoadingTimeHour());
@@ -426,7 +429,7 @@ void Company::moveatruck()
 		if (curr_Hour == movetimeHour && curr_Day == movetimeDays)
 		{
 			//V_truckslist_loading->dequeue(x);
-			Moving_TruckList->enqueue(truck, 0);
+			Moving_TruckList->enqueue(truck, -(cargo->getdelivaryhour() + 24 * (cargo->getdelivaryhour())));
 			truck->Calc_CDT_ForCargos();
 			NoLoadingTrucks--;
 			V_truck_Loading = nullptr;
@@ -438,6 +441,7 @@ void Company::moveatruck()
 	if (S_truck_Loading != nullptr)
 	{
 		truck = S_truck_Loading;
+		truck->PeekCargoList(cargo);
 		int movetimeDays = truck->getLoadingTimeDay();
 		int movetimeHour = (/*truck->calcTotalLoadingTimeCargos()*/truck->getTotalLoadingTimeCargos()) + (truck->getLoadingTimeHour());
 		while (movetimeHour > 24)
@@ -452,7 +456,7 @@ void Company::moveatruck()
 		if (curr_Hour == movetimeHour && curr_Day == movetimeDays)
 		{
 			//S_truckslist_loading->dequeue(x);
-			Moving_TruckList->enqueue(truck, 0);
+			Moving_TruckList->enqueue(truck, -(cargo->getdelivaryhour() + 24 * (cargo->getdelivaryhour())));
 			truck->Calc_CDT_ForCargos();
 			NoLoadingTrucks--;
 			S_truck_Loading = nullptr;
